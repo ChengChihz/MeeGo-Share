@@ -1,0 +1,9 @@
+/build/
+/packages/
+*.log
+*.o
+*.pem
+*.key
+*.p12
+.DS_Store
+Thumbs.db

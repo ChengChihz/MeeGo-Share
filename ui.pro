@@ -1,0 +1,15 @@
+TEMPLATE = app
+TARGET = n9-lanshare
+CONFIG += release
+QT += declarative network
+SOURCES += ui.cpp third_party/qjson/parser.cpp third_party/qjson/json_scanner.cpp third_party/qjson/json_parser.cc third_party/qjson/serializer.cpp
+INCLUDEPATH += third_party/qjson
+HEADERS += transfer.h
+HEADERS += controllerprobe.h
+HEADERS += pickerprobe.h
+HEADERS += localization.h
+HEADERS += translationprobe.h
+HEADERS += languageswitchprobe.h
+HEADERS += singleinstance.h
+HEADERS += startupprobe.h
+HEADERS += startupcover.h
