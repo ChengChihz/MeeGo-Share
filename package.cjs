@@ -14,10 +14,10 @@ add('usr/share/icons/hicolor/80x80/apps/localsend-meego.png',icon);
 const description='为 Nokia N9 开发的 MeeShare，支持局域网文件收发，兼容 LocalSend 协议';
 add('usr/share/applications/localsend-meego.desktop','[Desktop Entry]\nType=Application\nName=MeeShare\nComment='+description+'\nExec=/opt/localsend-meego/launch.sh\nIcon=/usr/share/icons/hicolor/80x80/apps/localsend-meego.png\nTerminal=false\nCategories=Utility;\n');
 const doc='usr/share/doc/localsend-meego/';
-for(const [src,dest] of [['LICENSE','LICENSE'],['NOTICE','NOTICE'],['LocalSend-LICENSE','LocalSend-LICENSE'],['QJson-COPYING.LIB','QJson-COPYING.LIB']])add(doc+dest,read(src));
+for(const [src,dest] of [['LICENSE','LICENSE'],['NOTICE','NOTICE'],['third_party/localsend/LICENSE','LocalSend-LICENSE'],['third_party/qjson/COPYING.LIB','QJson-COPYING.LIB']])add(doc+dest,read(src));
 add(doc+'MbedTLS-LICENSE',fs.readFileSync(path.join(work,'third_party/mbedtls-3.6.7/LICENSE')));
 const qjson=fs.readdirSync(path.join(work,'third_party/qjson')).filter(n=>fs.statSync(path.join(work,'third_party/qjson',n)).isFile()).map(n=>({name:'qjson/'+n,data:fs.readFileSync(path.join(work,'third_party/qjson',n))}));
-qjson.push({name:'qjson/COPYING.LIB',data:read('QJson-COPYING.LIB')}, {name:'qjson/BUILD.txt',data:'QJson sources compile as part of ui.pro and network.pro. See docs/BUILD.zh-CN.md.\n'});
+qjson.push({name:'qjson/COPYING.LIB',data:read('third_party/qjson/COPYING.LIB')}, {name:'qjson/BUILD.txt',data:'QJson sources compile as part of ui.pro and network.pro. See docs/BUILD.zh-CN.md.\n'});
 add(doc+'qjson-source.tar.gz',zlib.gzipSync(tar(qjson)));
 const kit=[...qjson];
 for(const n of fs.readdirSync(base).filter(n=>/\.(cpp|h|pro|qml)$/.test(n)))kit.push({name:'app/'+n,data:read(n)});
@@ -31,6 +31,7 @@ const control='Package: localsend-meego\nVersion: 1.004\nArchitecture: armel\nMa
 const md5=payload.map(e=>crypto.createHash('md5').update(e.data).digest('hex')+'  '+e.name.slice(2)).join('\n')+'\n';
 const deb=ar([{name:'debian-binary',data:Buffer.from('2.0\n')},{name:'control.tar.gz',data:zlib.gzipSync(tar([{name:'./control',data:control},{name:'./md5sums',data:md5}]))},{name:'data.tar.gz',data:zlib.gzipSync(tar([...dirs].sort((a,b)=>a.length-b.length).map(name=>({name,directory:true,mode:0o755})).concat(payload)))}]);
 const out=path.join(base,'packages');fs.mkdirSync(out,{recursive:true});const file=path.join(out,'MeeShare_1.004_armel.deb');fs.writeFileSync(file,deb);fs.writeFileSync(file+'.sha256',crypto.createHash('sha256').update(deb).digest('hex')+'  '+path.basename(file)+'\n');console.log({file,bytes:deb.length,files:payload.length});
+
 
 
 
