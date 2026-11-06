@@ -5,6 +5,7 @@ Original client code, logo and icon: Apache License 2.0.
 LocalSend protocol and random-name dictionaries: LocalSend project and contributors (Apache-2.0); dictionary resources derived from v1.18.2. No official LocalSend logo is included in this release.
 Mbed TLS 3.6.7: Mbed TLS contributors; Apache-2.0 option selected.
 QJson: Flavio Castelli and other contributors; GNU Library General Public License version 2 or later. Source copy obtained from glKarin/weibomm; original file notices are retained.
+libcontentaction: dynamically linked device library, LGPL-2.1.
 Qt and MeeGo Qt Components: runtime libraries supplied by the device; their licenses remain unchanged.
 
 MeeShare is an independent compatible implementation, not affiliated with or endorsed by the LocalSend project.

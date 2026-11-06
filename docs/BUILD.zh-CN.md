@@ -18,6 +18,7 @@
 - `transfer.h`：文件选择、设置、传输控制与反馈
 - `main.cpp`：网络组件，处理设备发现和 HTTPS 文件传输
 - `localization.h`、`translations/`：五语言界面及运行时切换
+- `libcontentaction0`：界面程序链接的设备原生文件打开库
 - `third_party/qjson/`、`third_party/mbedtls-3.6.7/`：随附依赖源码和许可
 - `package.cjs`：生成 Debian/Harmattan 安装包及重新链接材料
 

@@ -126,4 +126,13 @@ LocalSend protocol and random-name dictionaries: LocalSend project and contribut
 Networking and data components: Qt, Mbed TLS, QJson
 
 Independent compatible implementation, not affiliated with the LocalSend project</translation></message>
+<message utf8="true"><source>接收完成</source><translation>Transfer complete</translation></message>
+<message utf8="true"><source>立即打开</source><translation>Open now</translation></message>
+<message utf8="true"><source>关闭</source><translation>Close</translation></message>
+<message utf8="true"><source>点击文件以打开</source><translation>Tap a file to open it</translation></message>
+<message utf8="true"><source>文件不存在或无法读取。</source><translation>The file is missing or cannot be read.</translation></message>
+<message utf8="true"><source>系统没有可打开此文件的应用。</source><translation>No installed app can open this file.</translation></message>
+<message utf8="true"><source>已接收 %1 个文件</source><translation>Received %1 files</translation></message>
+<message utf8="true"><source>存储空间不足，请更改保存目录或释放空间。</source><translation>Not enough storage. Change the save folder or free some space.</translation></message>
+<message utf8="true"><source>支持局域网文件收发，当前每个接收文件最多 200MB，传输时请保持应用打开</source><translation>Share files over your local network. Incoming files are limited to 200MB each. Keep the app open during transfers</translation></message>
 </context></TS>

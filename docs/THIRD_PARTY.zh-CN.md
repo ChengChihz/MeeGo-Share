@@ -6,6 +6,7 @@ MeeShare 原创客户端代码、logo 与 icon：Copyright 2026 Chih，Apache Li
 - **Mbed TLS 3.6.7**：按其双重许可中的 Apache 2.0 选项使用，保留原始版权与许可文件，见 `third_party/mbedtls-3.6.7/LICENSE`。
 - **QJson**：按源文件中的 GNU Library General Public License 第 2 版或后续版本声明使用。当前源码副本来自 `glKarin/weibomm` 随附的 QJson；原始版权与生成器声明均予保留。见 `third_party/qjson/COPYING.LIB` 及各文件头部。二进制包随附源码和重新链接材料。
 - **Qt 与 MeeGo Qt Components**：使用设备提供的运行库和原生控件，保持各自许可。不分发 Nokia SDK 或系统固件。
+- **libcontentaction**：动态链接设备提供的 Harmattan 系统库，用于通过关联应用打开受支持的文件。该库保持其 LGPL 2.1 许可，不随应用分发 SDK 库二进制。
 
 各许可证英文原文原样保留；本说明不替代其法律文本。
 

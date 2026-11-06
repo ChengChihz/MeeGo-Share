@@ -126,4 +126,13 @@ LocalSend プロトコルとランダム名辞書：LocalSend プロジェクト
 ネットワーク・データ部品：Qt、Mbed TLS、QJson
 
 独立した互換実装であり、LocalSend プロジェクトの公式製品ではありません</translation></message>
+<message utf8="true"><source>接收完成</source><translation>受信完了</translation></message>
+<message utf8="true"><source>立即打开</source><translation>今すぐ開く</translation></message>
+<message utf8="true"><source>关闭</source><translation>閉じる</translation></message>
+<message utf8="true"><source>点击文件以打开</source><translation>ファイルをタップして開く</translation></message>
+<message utf8="true"><source>文件不存在或无法读取。</source><translation>ファイルが存在しないか、読み取れません。</translation></message>
+<message utf8="true"><source>系统没有可打开此文件的应用。</source><translation>このファイルを開けるアプリがありません。</translation></message>
+<message utf8="true"><source>已接收 %1 个文件</source><translation>%1 個のファイルを受信しました</translation></message>
+<message utf8="true"><source>存储空间不足，请更改保存目录或释放空间。</source><translation>空き容量が不足しています。保存先を変更するか空き容量を増やしてください。</translation></message>
+<message utf8="true"><source>支持局域网文件收发，当前每个接收文件最多 200MB，传输时请保持应用打开</source><translation>ローカルネットワークでファイルを送受信。受信ファイルは 1 個につき最大 200MB。転送中はアプリを開いたままにしてください</translation></message>
 </context></TS>

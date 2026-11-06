@@ -27,7 +27,7 @@ PageStackWindow {
   Column {
    id:heading;x:26;y:18;width:parent.width-52;spacing:3
    Label {text:"MeeShare";font.pixelSize:32;font.bold:true;color:app.accent}
-   Label {text:app.tr("兼容 LocalSend，Ver %1").arg("1.004");font.pixelSize:18;color:app.muted}
+   Label {text:app.tr("兼容 LocalSend，Ver %1").arg("1.005");font.pixelSize:18;color:app.muted}
   }
   TabGroup {
    id:tabs;Component.onCompleted:{if(previewTab===1)currentTab=sendPage;else if(previewTab===2)currentTab=settingsPage;}
@@ -43,7 +43,7 @@ currentTab:receivePage
        onClicked:transfer.listening?transfer.stopReceive():transfer.startReceive()}
      }
     }
-    Button {id:receivedFilesButton;width:300;anchors.horizontalCenter:parent.horizontalCenter;anchors.bottom:parent.bottom;anchors.bottomMargin:24;text:app.tr("查看接收文件");onClicked:{transfer.beginPicker("files");transfer.openReceived();pageStack.push(browser)}}
+    Button {id:receivedFilesButton;width:300;anchors.horizontalCenter:parent.horizontalCenter;anchors.bottom:parent.bottom;anchors.bottomMargin:24;text:app.tr("查看接收文件");onClicked:{transfer.openReceived();pageStack.push(browser)}}
    }
    Item {
     id:sendPage;anchors.fill:parent
@@ -143,26 +143,26 @@ height:Math.max(56,statusText.paintedHeight+24);color:"#e6effa"
    tools:ToolBarLayout {
     Item {width:parent.width;height:parent.height
      ToolIcon {x:8;anchors.verticalCenter:parent.verticalCenter;iconId:"toolbar-back";onClicked:pageStack.pop()}
-     Button {id:doneSelection;width:180;platformStyle:ButtonStyle {fontPixelSize:22}
+     Button {id:doneSelection;visible:transfer.pickerMode!=="received";width:180;platformStyle:ButtonStyle {fontPixelSize:22}
 anchors.right:parent.right;anchors.rightMargin:20;anchors.verticalCenter:parent.verticalCenter;text:transfer.pickerMode==="folder"?app.tr("选择此目录"):app.tr("完成（%1）").arg(transfer.selectedCount);onClicked:{if(transfer.pickerMode==="folder")transfer.setReceiveDirectory(transfer.folder);pageStack.pop()}}
      Button {width:110;platformStyle:ButtonStyle {fontPixelSize:22}
-anchors.right:doneSelection.left;anchors.rightMargin:12;anchors.verticalCenter:parent.verticalCenter;text:app.tr("上一级");onClicked:transfer.up()}
+anchors.right:doneSelection.visible?doneSelection.left:parent.right;anchors.rightMargin:doneSelection.visible?12:20;anchors.verticalCenter:parent.verticalCenter;text:app.tr("上一级");onClicked:transfer.up()}
     }
    }
    Column {anchors.fill:parent;spacing:10
     Item {width:parent.width;height:80
      Label {x:24;y:8;width:parent.width-48;height:40;text:transfer.folder.replace('/home/user/MyDocs',app.tr("文件"));color:app.accent;elide:Text.ElideLeft;verticalAlignment:Text.AlignVCenter}
-     Label {x:24;y:49;width:parent.width-48;visible:transfer.pickerMode!=="folder";text:app.tr("已选择 %1 个文件").arg(transfer.selectedCount);font.pixelSize:18;color:app.muted}
+     Label {x:24;y:49;width:parent.width-48;visible:transfer.pickerMode!=="folder";text:transfer.pickerMode==="received"?app.tr("点击文件以打开"):app.tr("已选择 %1 个文件").arg(transfer.selectedCount);font.pixelSize:18;color:app.muted}
     }
-    ListView {visible:transfer.pickerMode!=="photos";width:parent.width;height:parent.height-90;clip:true;model:transfer.entries
+    ListView {visible:transfer.pickerMode!=="photos";width:parent.width;height:parent.height-90;clip:true;model:transfer.pickerMode==="photos"?[]:transfer.entries
      delegate:Item {objectName:"filePickRow";property string itemPath:modelData.path;width:parent.width;height:76
-      Label {x:24;anchors.verticalCenter:parent.verticalCenter;width:parent.width-100;text:(modelData.directory?"▸  ":"")+modelData.name;elide:Text.ElideMiddle;font.pixelSize:24;color:"#24394f"}
+      Label {x:24;anchors.verticalCenter:parent.verticalCenter;width:parent.width-(transfer.pickerMode==="received"?48:100);text:(modelData.directory?"▸  ":"")+modelData.name;elide:Text.ElideMiddle;font.pixelSize:24;color:"#24394f"}
       Rectangle {anchors.bottom:parent.bottom;width:parent.width;height:1;color:"#d5e1ef"}
-      CheckBox {objectName:"filePickCheck";z:2;anchors.right:parent.right;anchors.rightMargin:20;anchors.verticalCenter:parent.verticalCenter;visible:!modelData.directory&&transfer.pickerMode!=="folder";checked:transfer.selectedCount>=0&&transfer.isSelected(modelData.path);onClicked:transfer.toggleSelection(modelData.path)}
-      MouseArea {z:3;anchors.fill:parent;onClicked:transfer.toggleSelection(modelData.path)}
+      CheckBox {objectName:"filePickCheck";z:2;anchors.right:parent.right;anchors.rightMargin:20;anchors.verticalCenter:parent.verticalCenter;visible:!modelData.directory&&transfer.pickerMode!=="folder"&&transfer.pickerMode!=="received";checked:transfer.selectedCount>=0&&transfer.isSelected(modelData.path);onClicked:transfer.toggleSelection(modelData.path)}
+      MouseArea {z:3;anchors.fill:parent;onClicked:transfer.activateEntry(modelData.path)}
      }
     }
-    GridView {visible:transfer.pickerMode==="photos";width:parent.width;height:parent.height-90;clip:true;cellWidth:parent.width/3;cellHeight:178;model:transfer.entries
+    GridView {visible:transfer.pickerMode==="photos";width:parent.width;height:parent.height-90;clip:true;cellWidth:parent.width/3;cellHeight:178;model:transfer.pickerMode==="photos"?transfer.entries:[]
      delegate:Item {objectName:"photoPickRow";property string itemPath:modelData.path;width:GridView.view.cellWidth;height:178
       Rectangle {x:8;y:4;width:parent.width-16;height:112;radius:8;color:"#e0ebf8";clip:true
        Image {anchors.fill:parent;anchors.margins:4;source:modelData.directory?"":"file://"+modelData.path;sourceSize.width:240;sourceSize.height:240;fillMode:Image.PreserveAspectCrop;clip:true;smooth:true;asynchronous:true;cache:false}
@@ -244,9 +244,9 @@ clip:true
     Column {id:aboutContent;x:26;y:24;width:parent.width-52;spacing:24
      Image {source:"meeshare-logo.png";width:80;height:80;smooth:true}
      Label {text:"MeeShare";font.pixelSize:30;color:app.accent}
-     Label {text:"Ver 1.004";font.pixelSize:20;color:app.muted}
+     Label {text:"Ver 1.005";font.pixelSize:20;color:app.muted}
      Label {width:parent.width;text:app.tr("为 Nokia N9 开发的局域网文件传输应用，兼容 LocalSend 协议");font.pixelSize:22;color:"#24394f";wrapMode:Text.Wrap}
-     Label {width:parent.width;text:app.tr("支持局域网文件收发，当前每个接收文件最多 64MB，传输时请保持应用打开");font.pixelSize:20;color:app.muted;wrapMode:Text.Wrap}
+     Label {width:parent.width;text:app.tr("支持局域网文件收发，当前每个接收文件最多 200MB，传输时请保持应用打开");font.pixelSize:20;color:app.muted;wrapMode:Text.Wrap}
      Label {width:parent.width;text:app.tr("收发设备需连接同一 WiFi 网络。收到的文件可在保存目录中查看");font.pixelSize:19;color:app.muted;wrapMode:Text.Wrap}
      Item {width:1;height:12}
      Label {width:parent.width;text:app.tr("客户端开发、MeeGo 适配与界面：Chih\nLocalSend 协议与随机名称词库：LocalSend 项目及贡献者\n网络与数据组件：Qt、Mbed TLS、QJson\n\n独立兼容实现，与 LocalSend 项目无官方隶属关系");font.pixelSize:19;color:"#889aaf";wrapMode:Text.Wrap;lineHeight:1.2}
@@ -267,8 +267,12 @@ clip:true
 onRejected:{app.promptShown=false;transfer.answer(false)}}
  }
  QtObject {id:dialogLoader;property variant item:null;property bool needed:false;onNeededChanged:{if(needed&&!item)item=dialogComponent.createObject(popupHost);}}
+ Component {id:completionComponent
+  QueryDialog {objectName:"receiveCompletion";titleText:app.tr("接收完成");message:transfer.receivedSummary;acceptButtonText:transfer.canOpenReceived?app.tr("立即打开"):app.tr("查看接收文件");rejectButtonText:app.tr("关闭");onAccepted:{if(transfer.canOpenReceived)transfer.openLastReceived();else{transfer.openReceived();pageStack.push(browser);}}}
+ }
+ QtObject {id:completionLoader;property variant item:null}
  function notify(text){if(!bannerLoader.item)bannerLoader.item=bannerComponent.createObject(popupHost);if(bannerLoader.item){bannerLoader.item.text=text;bannerLoader.item.show();}}
- Connections {target:transfer;onFeedback:app.notify(text);onChanged:{if(transfer.offer.length&&!app.promptShown){dialogLoader.needed=true;if(dialogLoader.item&&!app.promptShown){app.promptShown=true;dialogLoader.item.open();}}else if(!transfer.offer.length&&app.promptShown){app.promptShown=false;if(dialogLoader.item)dialogLoader.item.close();}}}
+ Connections {target:transfer;onFeedback:app.notify(text);onReceiveCompleted:{if(!completionLoader.item)completionLoader.item=completionComponent.createObject(popupHost);if(completionLoader.item)completionLoader.item.open();}onChanged:{if(transfer.offer.length&&!app.promptShown){if(completionLoader.item)completionLoader.item.close();dialogLoader.needed=true;if(dialogLoader.item&&!app.promptShown){app.promptShown=true;dialogLoader.item.open();}}else if(!transfer.offer.length&&app.promptShown){app.promptShown=false;if(dialogLoader.item)dialogLoader.item.close();}}}
 }
 
 

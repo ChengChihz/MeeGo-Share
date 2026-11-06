@@ -629,5 +629,59 @@ module.exports=[
     "用戶端開發、MeeGo 適配與介面：Chih\nLocalSend 協定與隨機名稱詞庫：LocalSend 專案及貢獻者\n網路與資料元件：Qt、Mbed TLS、QJson\n\n獨立相容實作，與 LocalSend 專案無官方隸屬關係",
     "クライアント開発、MeeGo 対応と UI：Chih\nLocalSend プロトコルとランダム名辞書：LocalSend プロジェクトと貢献者\nネットワーク・データ部品：Qt、Mbed TLS、QJson\n\n独立した互換実装であり、LocalSend プロジェクトの公式製品ではありません",
     "클라이언트 개발, MeeGo 지원 및 UI: Chih\nLocalSend 프로토콜 및 무작위 이름 사전: LocalSend 프로젝트와 기여자\n네트워크 및 데이터 구성 요소: Qt, Mbed TLS, QJson\n\n독립적인 호환 구현이며 LocalSend 프로젝트와 공식 제휴 관계가 없습니다"
+  ],
+  [
+    "Transfer complete",
+    "接收完成",
+    "受信完了",
+    "받기 완료"
+  ],
+  [
+    "Open now",
+    "立即開啟",
+    "今すぐ開く",
+    "지금 열기"
+  ],
+  [
+    "Close",
+    "關閉",
+    "閉じる",
+    "닫기"
+  ],
+  [
+    "Tap a file to open it",
+    "點選檔案以開啟",
+    "ファイルをタップして開く",
+    "파일을 눌러 여세요"
+  ],
+  [
+    "The file is missing or cannot be read.",
+    "檔案不存在或無法讀取。",
+    "ファイルが存在しないか、読み取れません。",
+    "파일이 없거나 읽을 수 없습니다."
+  ],
+  [
+    "No installed app can open this file.",
+    "系統沒有可開啟此檔案的應用。",
+    "このファイルを開けるアプリがありません。",
+    "이 파일을 열 수 있는 앱이 없습니다."
+  ],
+  [
+    "Received %1 files",
+    "已接收 %1 個檔案",
+    "%1 個のファイルを受信しました",
+    "파일 %1개를 받았습니다"
+  ],
+  [
+    "Not enough storage. Change the save folder or free some space.",
+    "儲存空間不足，請更改儲存目錄或釋放空間。",
+    "空き容量が不足しています。保存先を変更するか空き容量を増やしてください。",
+    "저장 공간이 부족합니다. 저장 폴더를 변경하거나 공간을 확보하세요."
+  ],
+  [
+    "Share files over your local network. Incoming files are limited to 200MB each. Keep the app open during transfers",
+    "支援區域網路檔案收發，目前每個接收檔案最多 200MB，傳輸時請保持應用開啟",
+    "ローカルネットワークでファイルを送受信。受信ファイルは 1 個につき最大 200MB。転送中はアプリを開いたままにしてください",
+    "로컬 네트워크에서 파일을 주고받으세요. 받는 파일은 개당 최대 200MB입니다. 전송 중에는 앱을 열어 두세요"
   ]
 ];

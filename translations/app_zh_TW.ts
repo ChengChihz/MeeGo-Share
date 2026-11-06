@@ -126,4 +126,13 @@ LocalSend 協定與隨機名稱詞庫：LocalSend 專案及貢獻者
 網路與資料元件：Qt、Mbed TLS、QJson
 
 獨立相容實作，與 LocalSend 專案無官方隸屬關係</translation></message>
+<message utf8="true"><source>接收完成</source><translation>接收完成</translation></message>
+<message utf8="true"><source>立即打开</source><translation>立即開啟</translation></message>
+<message utf8="true"><source>关闭</source><translation>關閉</translation></message>
+<message utf8="true"><source>点击文件以打开</source><translation>點選檔案以開啟</translation></message>
+<message utf8="true"><source>文件不存在或无法读取。</source><translation>檔案不存在或無法讀取。</translation></message>
+<message utf8="true"><source>系统没有可打开此文件的应用。</source><translation>系統沒有可開啟此檔案的應用。</translation></message>
+<message utf8="true"><source>已接收 %1 个文件</source><translation>已接收 %1 個檔案</translation></message>
+<message utf8="true"><source>存储空间不足，请更改保存目录或释放空间。</source><translation>儲存空間不足，請更改儲存目錄或釋放空間。</translation></message>
+<message utf8="true"><source>支持局域网文件收发，当前每个接收文件最多 200MB，传输时请保持应用打开</source><translation>支援區域網路檔案收發，目前每個接收檔案最多 200MB，傳輸時請保持應用開啟</translation></message>
 </context></TS>

@@ -5,6 +5,7 @@
 #include <QtGui>
 #include <QtDeclarative>
 #include <QtNetwork>
+#include <contentaction/contentaction.h>
 #include "parser.h"
 #include "localization.h"
 
@@ -28,10 +29,13 @@ class Transfer : public QObject {
  Q_PROPERTY(bool autoSave READ autoSave WRITE setAutoSave NOTIFY changed)
  Q_PROPERTY(QString receiveDirectory READ receiveDirectory NOTIFY changed)
  Q_PROPERTY(QString pickerMode READ pickerMode NOTIFY changed)
+ Q_PROPERTY(int receivedCount READ receivedCount NOTIFY changed)
+ Q_PROPERTY(QString receivedSummary READ receivedSummary NOTIFY changed)
+ Q_PROPERTY(bool canOpenReceived READ canOpenReceived NOTIFY changed)
  QString state,message,dir,chosen,peerName,ip,pin,root,identity,receive,helper,ownName,operation;
- QVariantList listing,deviceList;QMap<QString,QVariantMap> known;QStringList selection;
+ QVariantList listing,deviceList;QMap<QString,QVariantMap> known;QStringList selection,receivedBatch;
  QProcess receiver,job;QTimer decisionTimer,expiry;QByteArray receiverBuffer,jobOutput;
- bool working,stopping,canceled,automatic,receiving;int peerPort;QString pickMode;
+ bool working,stopping,canceled,automatic,receiving,receivedOpenable;int peerPort;QString pickMode;
  bool canChangeService()const{return !working&&message.isEmpty()&&!receiving;}
  void restartService(){if(listening()){stopReceive();startReceive();}}
  static QString trUtf(const char *s){return QCoreApplication::translate("App",s,0,QCoreApplication::UnicodeUTF8);}
@@ -41,7 +45,7 @@ class Transfer : public QObject {
  void run(QString op,QStringList args){operation=op;jobOutput.clear();working=true;canceled=false;state=op=="info"?trUtf("正在连接设备…"):op=="send"?trUtf("等待对方接收…"):trUtf("正在准备设备名称…");job.start(helper,args);emit changed();}
  QString failureText(){QString e=QString::fromUtf8(jobOutput);if(e.contains("http_403")||e.contains("file_not_accepted"))return trUtf("对方拒绝接收。");if(e.contains("http_409"))return trUtf("对方正在处理其他传输，请稍后再试。");if(e.contains("http_401"))return trUtf("对方要求 PIN 验证，此版本暂不支持。");if(e.contains("http_429"))return trUtf("请求过于频繁，请稍后再试。");if(e.contains("timed out")||e.contains("timeout"))return trUtf("等待对方响应超时，请重试。");if(e.contains("peer_fingerprint_mismatch"))return trUtf("对方设备身份已变化，请重新连接后发送。");if(e.contains("file_missing")||e.contains("file_read"))return trUtf("无法读取选中的文件，请重新选择。");return operation=="send"?trUtf("发送失败，请检查网络及对方设备。"):trUtf("连接失败，请确认对方已打开 LocalSend。");}
 public:
- Transfer():working(false),stopping(false),canceled(false),receiving(false),peerPort(53317){
+ Transfer():working(false),stopping(false),canceled(false),receiving(false),receivedOpenable(false),peerPort(53317){
   root="/home/user/MyDocs";dir=root;identity=QDir::homePath()+"/.config/n9-lanshare";receive=root+"/LocalSend";helper=QCoreApplication::applicationDirPath()+"/probe";
   QDir().mkpath(identity);QDir().mkpath(receive);QSettings settings;QString stored=QFileInfo(settings.value("receive_directory",receive).toString()).canonicalFilePath();if(stored==root||stored.startsWith(root+"/"))receive=stored;automatic=settings.value("auto_save",false).toBool();pickMode="files";ip=settings.value("peer_ip","192.168.1.13").toString();ownName=trUtf("Nokia N9");state=trUtf("正在准备局域网发现…");
   decisionTimer.setSingleShot(true);decisionTimer.setInterval(105000);connect(&decisionTimer,SIGNAL(timeout()),this,SLOT(rejectExpired()));
@@ -54,6 +58,12 @@ public:
  QString localAddress()const{foreach(QHostAddress a,QNetworkInterface::allAddresses()){quint32 n=a.toIPv4Address();if(a.protocol()==QAbstractSocket::IPv4Protocol&&((n>>24)==10||(n>>20)==0xac1||(n>>16)==0xc0a8))return a.toString();}return trUtf("请连接 Wi-Fi");}
  QString status()const{return state;}QString localName()const{return ownName;}QString offer()const{return message;}bool busy()const{return working;}bool listening()const{return receiver.state()!=QProcess::NotRunning;}QString folder()const{return dir;}QVariantList entries()const{return listing;}QVariantList devices()const{return deviceList;}QString selected()const{return chosen;}QString peer()const{return peerName;}QString host()const{return ip;}
  bool connected()const{return !pin.isEmpty();}bool autoSave()const{return automatic;}QString receiveDirectory()const{return receive;}QString pickerMode()const{return pickMode;}
+ int receivedCount()const{return receivedBatch.size();}bool canOpenReceived()const{return receivedOpenable;}
+ QString receivedSummary()const{return receivedBatch.size()==1?QFileInfo(receivedBatch.first()).fileName():trUtf("已接收 %1 个文件").arg(receivedBatch.size());}
+ bool canOpenFile(QString path)const{QFileInfo f(path);QString canonical=f.canonicalFilePath();return f.isFile()&&!f.isSymLink()&&f.isReadable()&&canonical.startsWith(root+"/")&&ContentAction::Action::defaultActionForFile(QUrl::fromLocalFile(canonical)).isValid();}
+ Q_INVOKABLE bool openFile(QString path){QFileInfo f(path);QString canonical=f.canonicalFilePath();if(!f.isFile()||f.isSymLink()||!f.isReadable()||!canonical.startsWith(root+"/")){finish(trUtf("文件不存在或无法读取。"));return false;}ContentAction::Action action=ContentAction::Action::defaultActionForFile(QUrl::fromLocalFile(canonical));if(!action.isValid()){finish(trUtf("系统没有可打开此文件的应用。"));return false;}action.trigger();return true;}
+ Q_INVOKABLE bool openLastReceived(){return receivedBatch.size()==1&&openFile(receivedBatch.first());}
+ Q_INVOKABLE void activateEntry(QString path){if(QFileInfo(path).isDir())browse(path);else if(pickMode=="received")openFile(path);else toggleSelection(path);}
  int selectedCount()const{return selection.size();}QString selectedSummary()const{return selection.isEmpty()?trUtf("选择要发送的文件"):selection.size()==1?QFileInfo(selection.first()).fileName():trUtf("已选择 %1 个文件").arg(selection.size());}
  Q_INVOKABLE bool isSelected(QString path)const{return selection.contains(path)||selection.contains(QFileInfo(path).canonicalFilePath());}
  Q_INVOKABLE void clearSelection(){selection.clear();chosen.clear();emit changed();}
@@ -62,7 +72,7 @@ public:
  void setHost(QString s){if(s==ip)return;ip=s.trimmed();pin.clear();peerName=known.value(ip).value("alias").toString();peerPort=known.value(ip).value("port",53317).toInt();emit changed();}
  Q_INVOKABLE void browse(QString path){QString canonical=QFileInfo(path).canonicalFilePath();if(canonical!=root&&!canonical.startsWith(root+"/"))return;dir=canonical;listing.clear();QDir d(dir);foreach(QFileInfo f,d.entryInfoList(QDir::Dirs|QDir::Files|QDir::NoDotAndDotDot|QDir::Readable,QDir::DirsFirst|QDir::Name)){if(f.isSymLink())continue;if(!f.isDir()){if(pickMode=="folder")continue;if(pickMode=="photos"&&!QStringList(QStringList()<<"jpg"<<"jpeg"<<"png"<<"gif"<<"bmp"<<"webp").contains(f.suffix().toLower()))continue;}QVariantMap m;m["name"]=f.fileName();m["path"]=f.absoluteFilePath();m["directory"]=f.isDir();m["size"]=f.size();listing.append(m);}emit changed();}
  Q_INVOKABLE void up(){if(dir!=root)browse(QFileInfo(dir).path());}
- Q_INVOKABLE void openReceived(){browse(receive);}
+ Q_INVOKABLE void openReceived(){pickMode="received";browse(receive);}
  Q_INVOKABLE void beginPicker(QString mode){pickMode=mode;QString target=mode=="folder"?receive:mode=="photos"?root+"/DCIM":root;if(!QFileInfo(target).isDir())target=root;browse(target);}
  Q_INVOKABLE void setReceiveDirectory(QString path){if(!canChangeService()){finish(trUtf("请先完成当前传输。"));return;}QFileInfo f(path);QString canonical=f.canonicalFilePath();if(!f.isDir()||f.isSymLink()||(canonical!=root&&!canonical.startsWith(root+"/"))||!f.isWritable()){finish(trUtf("此目录不可用，请选择手机文件区域内的文件夹。"));return;}receive=canonical;QSettings().setValue("receive_directory",receive);restartService();finish(trUtf("保存目录已更新。"));}
  Q_INVOKABLE void choose(QString path){if(QFileInfo(path).isDir())browse(path);else if(!isSelected(path))toggleSelection(path);}
@@ -78,7 +88,7 @@ public:
  Q_INVOKABLE void cancel(){if(working){canceled=true;job.kill();}}
  Q_INVOKABLE bool requestLanguage(QString code){if(!canChangeService()){finish(trUtf("请先完成当前传输。"));return false;}if(!AppLanguage::validChoice(code))return false;emit languageRequested(code);return true;}
 signals:
- void changed();void feedback(QString text);void languageRequested(QString code);
+ void changed();void feedback(QString text);void languageRequested(QString code);void receiveCompleted();
 private slots:
  void languageApplied(){state=listening()?trUtf("已就绪，正在发现附近设备。"):trUtf("接收与设备发现已关闭。");emit changed();}
  void languageFailed(){finish(trUtf("语言切换失败，请重试。"));}
@@ -100,9 +110,11 @@ private slots:
    if(line.startsWith("PEER ")){bool ok;QVariantMap m=QJson::Parser().parse(line.mid(5),&ok).toMap();if(ok)remember(m,m.value("ip").toString());}
    else if(line.startsWith("OFFER ")){bool ok;QVariantMap m=QJson::Parser().parse(line.mid(6),&ok).toMap();if(ok){decisionTimer.start();QStringList names;foreach(QVariant v,m.value("names").toList())names<<v.toString();message=trUtf("来自 ")+m.value("sender").toString()+"\n\n"+names.join("\n")+"\n\n"+QString::number(m.value("bytes").toLongLong())+trUtf(" 字节");}}
    else if(line.startsWith("READY"))state=trUtf("已就绪，正在发现附近设备。");
-   else if(line.startsWith("RECEIVE_OK")){receiving=false;finish(trUtf("接收完成，已保存到 ")+trUtf("文件")+receive.mid(root.size())+trUtf("。"));}
+   else if(line.startsWith("FILE_RECEIVED ")){bool ok;QVariantMap data=QJson::Parser().parse(line.mid(14),&ok).toMap();QFileInfo f(data.value("path").toString());QString path=f.canonicalFilePath();if(ok&&f.isFile()&&!f.isSymLink()&&path.startsWith(root+"/")&&!receivedBatch.contains(path))receivedBatch.append(path);}
+   else if(line.startsWith("RECEIVE_OK")){receiving=false;receivedOpenable=receivedBatch.size()==1&&canOpenFile(receivedBatch.first());finish(trUtf("接收完成，已保存到 ")+trUtf("文件")+receive.mid(root.size())+trUtf("。"));if(!receivedBatch.isEmpty())emit receiveCompleted();}
    else if(line.startsWith("RECEIVE_FAILED")){receiving=false;finish(trUtf("接收失败，未保存不完整文件，请重试。"));}
-   else if(line.startsWith("PREPARE_ACCEPTED")){receiving=true;state=trUtf("正在接收…");}
+   else if(line.startsWith("PREPARE_ACCEPTED")){receivedBatch.clear();receivedOpenable=false;receiving=true;state=trUtf("正在接收…");}
+   else if(line.startsWith("RECEIVE_NO_SPACE"))finish(trUtf("存储空间不足，请更改保存目录或释放空间。"));
    else if(line.startsWith("RECEIVE_CANCELED")){receiving=false;finish(trUtf("对方已取消发送。"));}
    else if(line.contains("PROBE_ERROR"))finish(trUtf("无法开启接收，可能端口正在使用。"));
    else if(line.startsWith("CONNECTION_ERROR")&&receiving){receiving=false;finish(trUtf("接收中断，请检查网络后重试。"));}

@@ -6,6 +6,7 @@ Original MeeShare client code, logo and icon: Copyright 2026 Chih, Apache Licens
 - **Mbed TLS 3.6.7**: used under the Apache 2.0 option of its dual license. Original copyright and license files are retained; see `third_party/mbedtls-3.6.7/LICENSE`.
 - **QJson**: used under the GNU Library General Public License version 2 or later, as stated in its source files. This source copy was obtained from the QJson bundled in `glKarin/weibomm`. Original copyright and generator notices are retained; see `third_party/qjson/COPYING.LIB` and individual file headers. Binary packages include source and relinking materials.
 - **Qt and MeeGo Qt Components**: runtime libraries and native components are provided by the device and retain their own licenses. The Nokia SDK and system firmware are not distributed.
+- **libcontentaction**: the device-provided Harmattan library is dynamically linked to open supported files in associated system apps. It retains its LGPL 2.1 license; no SDK library binary is bundled.
 
 Original English license texts are preserved unchanged. This summary does not replace them.
 

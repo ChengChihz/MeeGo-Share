@@ -18,6 +18,7 @@ The script generates translation catalogs, builds Mbed TLS, builds the network h
 - `transfer.h`: file selection, settings, transfer control and feedback
 - `main.cpp`: network helper for discovery and HTTPS file transfers
 - `localization.h`, `translations/`: five-language interface and runtime switching
+- `libcontentaction0`: the device-provided native file-opening library, linked by the interface
 - `third_party/qjson/`, `third_party/mbedtls-3.6.7/`: bundled dependency sources and licenses
 - `package.cjs`: Debian/Harmattan package generation and relinking materials
 
