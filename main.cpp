@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <sys/statvfs.h>
+#include <errno.h>
 #include <unistd.h>
 #include "mbedtls/ssl.h"
 #include "mbedtls/net_sockets.h"
@@ -26,6 +28,7 @@ static void save(QString p,QByteArray b){QFile f(p);if(!f.open(QIODevice::WriteO
 static QString randomId(){return QUuid::createUuid().toString().remove('{').remove('}');}
 static QByteArray sha(const QByteArray &b){unsigned char out[32];mbedtls_sha256((const unsigned char*)b.constData(),b.size(),out,0);return QByteArray((char*)out,32).toHex();}
 static void check(int r,const char *stage){if(r<0){char e[160];mbedtls_strerror(r,e,sizeof(e));throw QString("%1: %2 (%3)").arg(stage).arg(e).arg(r);}}
+static void cleanupStaging(const QString &dir){foreach(QFileInfo f,QDir(dir).entryInfoList(QStringList()<<".meeshare-receive-*.part",QDir::Files|QDir::Hidden|QDir::NoSymLinks)){bool ok=false;int pid=f.fileName().split('-').value(2).toInt(&ok);if(ok&&pid>0&&f.ownerId()==uint(getuid())&&kill(pid,0)<0&&errno==ESRCH)QFile::remove(f.absoluteFilePath());}}
 struct Identity {
  mbedtls_entropy_context entropy;mbedtls_ctr_drbg_context rng;mbedtls_pk_context key;mbedtls_x509_crt crt;QString fingerprint,alias;
  Identity(QString dir){mbedtls_entropy_init(&entropy);mbedtls_ctr_drbg_init(&rng);mbedtls_pk_init(&key);mbedtls_x509_crt_init(&crt);
@@ -123,6 +126,7 @@ int main(int argc,char **argv){QTextCodec::setCodecForLocale(QTextCodec::codecFo
  qDebug()<<"SEND_OK files="<<sent<<"bytes="<<total;return 0;
  }
  if(a[1]=="--serve"&&(a.size()==5||a.size()==6)){bool consent=a.size()==6&&a[5]=="consent",autosave=a.size()==6&&a[5]=="autosave";QString dir=QDir(a[3]).absolutePath();QDir().mkpath(dir);QString allowed=a[4];if(allowed!="lan"&&QHostAddress(allowed).isNull())throw QString("sender_ip_required");if(allowed=="lan"&&!consent&&!autosave)throw QString("lan_requires_consent");
+ cleanupStaging(dir);
  mbedtls_net_context listener;mbedtls_net_init(&listener);check(mbedtls_net_bind(&listener,NULL,"53317",MBEDTLS_NET_PROTO_TCP),"listen");
  QString session,source;QVariantMap accepted;QMap<QString,QString> tokens;QSet<QString> complete;Discovery discovery;QTime announced;announced.start();
  qDebug()<<"READY TLS1.2 restricted_test_receiver fingerprint="<<id.fingerprint;
@@ -135,7 +139,9 @@ int main(int argc,char **argv){QTextCodec::setCodecForLocale(QTextCodec::codecFo
  if(path=="/api/localsend/v2/prepare-upload"){
  if(!session.isEmpty()&&complete.size()!=accepted.size()){response(c,409);continue;}
  QVariantMap req=parse(body(c,h)).toMap(),files=req.value("files").toMap();if(files.isEmpty()||files.size()>20){response(c,400);continue;}
- bool valid=true;QSet<QString> names;qint64 total=0;for(QVariantMap::const_iterator it=files.begin();it!=files.end();++it){QVariantMap m=it.value().toMap();QString name=m.value("fileName").toString();qint64 size=m.value("size").toLongLong();if(name.isEmpty()||name=="."||name==".."||name.contains('/')||name.contains('\\')||name.contains(QChar(0))||names.contains(name)||QFile::exists(dir+"/"+name)||size<0||size>64*1024*1024){valid=false;break;}names.insert(name);total+=size;}if(!valid||total>128*1024*1024){response(c,400);continue;}
+ const qint64 maxFile=200LL*1024*1024,maxBatch=400LL*1024*1024,reserve=16LL*1024*1024;
+ bool valid=true;QSet<QString> names;qint64 total=0;for(QVariantMap::const_iterator it=files.begin();it!=files.end();++it){QVariantMap m=it.value().toMap();QString name=m.value("fileName").toString();bool sizeValid=false;qint64 size=m.value("size").toLongLong(&sizeValid);if(name.isEmpty()||name=="."||name==".."||name.contains('/')||name.contains('\\')||name.contains(QChar(0))||names.contains(name)||QFile::exists(dir+"/"+name)||!sizeValid||size<0||size>maxFile){valid=false;break;}names.insert(name);total+=size;}if(!valid||total>maxBatch){response(c,400);continue;}
+ struct statvfs space;if(statvfs(dir.toLocal8Bit().constData(),&space)||quint64(space.f_bavail)*quint64(space.f_frsize)<quint64(total+reserve)){response(c,507);qDebug()<<"RECEIVE_NO_SPACE";continue;}
  if(consent){QVariantMap offer;offer["sender"]=req.value("info").toMap().value("alias");offer["ip"]=peer;offer["count"]=files.size();offer["bytes"]=total;QVariantList names;foreach(QString key,files.keys())names.append(files.value(key).toMap().value("fileName"));offer["names"]=names;emitJson("OFFER ",offer);
  fd_set set;FD_ZERO(&set);FD_SET(0,&set);struct timeval wait;wait.tv_sec=110;wait.tv_usec=0;if(select(1,&set,NULL,NULL,&wait)<=0){response(c,403);continue;}char decision[32];if(!fgets(decision,sizeof(decision),stdin)||QByteArray(decision).trimmed()!="accept"){response(c,403);continue;}}
  session=randomId();source=peer;accepted=files;tokens.clear();complete.clear();QVariantMap replyTokens;foreach(QString key,files.keys()){QString t=randomId();tokens[key]=t;replyTokens[key]=t;}QVariantMap reply;reply["sessionId"]=session;reply["files"]=replyTokens;response(c,200,json(reply));qDebug()<<"PREPARE_ACCEPTED files="<<files.size();continue;
@@ -143,11 +149,11 @@ int main(int argc,char **argv){QTextCodec::setCodecForLocale(QTextCodec::codecFo
  if(path=="/api/localsend/v2/upload"){
  QString fid=url.queryItemValue("fileId");if(session.isEmpty()||peer!=source||url.queryItemValue("sessionId")!=session||!tokens.contains(fid)||url.queryItemValue("token")!=tokens.value(fid)||complete.contains(fid)){response(c,403);continue;}
  QVariantMap meta=accepted.value(fid).toMap();qint64 size=meta.value("size").toLongLong();if(!chunked(h)&&contentLength(h)!=size){response(c,400);continue;}contentLength(h);
- QString final=dir+"/"+meta.value("fileName").toString(),temp=dir+"/."+randomId()+".part";QFile f(temp);if(!f.open(QIODevice::WriteOnly)){response(c,500);continue;}f.setPermissions(QFile::ReadOwner|QFile::WriteOwner);
+ QString final=dir+"/"+meta.value("fileName").toString(),temp=dir+"/.meeshare-receive-"+QString::number(getpid())+"-"+randomId()+".part";QFile f(temp);if(!f.open(QIODevice::WriteOnly)){response(c,500);continue;}f.setPermissions(QFile::ReadOwner|QFile::WriteOwner);
  mbedtls_sha256_context hash;mbedtls_sha256_init(&hash);mbedtls_sha256_starts(&hash,0);qint64 received=0;bool ok=true;try{bool done=false;while(!done){qint64 block=size-received;if(chunked(h)){QByteArray line=c.line().split(';').value(0);bool valid=false;block=line.toLongLong(&valid,16);if(!valid||block<0||block>size-received)throw QString("invalid_chunk_size");if(block==0){int trailers=0;while(!c.line().isEmpty()){if(++trailers>20)throw QString("trailer_limit");}done=true;}}else done=true;
  while(block>0){QByteArray b=c.take(qMin(qint64(16384),block));if(f.write(b)!=b.size())throw QString("disk_write");mbedtls_sha256_update(&hash,(unsigned char*)b.constData(),b.size());received+=b.size();block-=b.size();}if(chunked(h)&&!done&&c.exact(2)!="\r\n")throw QString("invalid_chunk_end");}if(received!=size)throw QString("size_mismatch");}catch(QString){ok=false;}
  unsigned char digest[32];mbedtls_sha256_finish(&hash,digest);mbedtls_sha256_free(&hash);f.close();QString actual=QByteArray((char*)digest,32).toHex(),expected=meta.value("sha256").toString();if(!expected.isEmpty()&&expected.compare(actual,Qt::CaseInsensitive))ok=false;
- if(!ok||!QFile::rename(temp,final)){QFile::remove(temp);response(c,422);qDebug()<<"RECEIVE_FAILED";session.clear();accepted.clear();tokens.clear();complete.clear();continue;}complete.insert(fid);response(c,200);if(complete.size()==accepted.size())qDebug()<<"RECEIVE_OK bytes="<<received<<"sha256="<<actual;else qDebug()<<"RECEIVE_PROGRESS files="<<complete.size();continue;
+ if(!ok||!QFile::rename(temp,final)){QFile::remove(temp);session.clear();accepted.clear();tokens.clear();complete.clear();qDebug()<<"RECEIVE_FAILED";response(c,422);continue;}complete.insert(fid);QVariantMap saved;saved["path"]=final;saved["bytes"]=received;emitJson("FILE_RECEIVED ",saved);if(complete.size()==accepted.size())qDebug()<<"RECEIVE_OK bytes="<<received<<"sha256="<<actual;else qDebug()<<"RECEIVE_PROGRESS files="<<complete.size();response(c,200);continue;
  }
  if(path=="/api/localsend/v2/cancel"&&peer==source&&url.queryItemValue("sessionId")==session){session.clear();accepted.clear();tokens.clear();complete.clear();response(c,200);qDebug()<<"RECEIVE_CANCELED";continue;}
  response(c,404);
