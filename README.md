@@ -21,6 +21,7 @@ Screenshots captured on Nokia N9 with the English interface.
 - Accept or reject incoming requests, or enable automatic saving in Settings
 - Choose a receive folder; the default is the LocalSend folder in the phone's file storage
 - Set a device name or generate a random one
+- Open a supported file immediately after receipt, or tap files in the received-files browser to open them
 - Simplified Chinese, Traditional Chinese, English, Japanese and Korean interfaces
 - File transfers over HTTPS / TLS 1.2
 
@@ -38,7 +39,7 @@ Keep the app open during transfers.
 
 ## Current limitations
 
-- Incoming files are limited to 64 MiB each, with at most 20 files and 128 MiB per receive request
+- Incoming files are limited to 200 MiB each, with at most 20 files and 400 MiB per receive request
 - Recursive folder transfers, resume, PIN verification and browser sharing links are not supported
 - Files with the same name must be sent in separate batches; existing files are not overwritten on receipt
 - Receiving does not continue after the app is closed; no persistent background service is provided

@@ -1,16 +1,11 @@
-# MeeShare
+# MeeShare 1.005
 
-A local-network file transfer app for Nokia N9 and MeeGo, developed using LocalSend resources and the related protocol.
+This feature update adds file-opening actions and raises the incoming file-size limit.
 
-This public release provides:
+- After receiving a single file, choose “Open now” if an installed app supports it; otherwise, or for multi-file transfers, open the receive folder to browse the files
+- The per-file receive limit increases from 64 MiB to 200 MiB; the total per request increases from 128 MiB to 400 MiB, with up to 20 files
+- Files continue to stream to disk; available storage is checked before receiving, with improved temporary-file cleanup and recovery after interrupted transfers
 
-- Native-style controls, a light blue interface and distinct app branding
-- Automatic device discovery, two-way file transfers and multiple selection for photos and files
-- Receive confirmation, automatic saving, a configurable save folder and device naming
-- Simplified Chinese, Traditional Chinese, English, Japanese and Korean interfaces
+> N9 hardware transfer test: receiving a complete 200 MiB file took about 73.3 seconds; sending it back from the N9 took about 201.5 seconds. For reference only; speeds depend on the files and WiFi network conditions.
 
-For Nokia N9 running MeeGo Harmattan PR1.3.
-
-Incoming files are limited to 64 MiB each. Keep the app open during transfers. See the README for further details.
-
-The LocalSend name is used only to describe protocol compatibility and resource provenance. MeeShare is not an official LocalSend product.
+Files open in their associated system apps. MeeShare does not include a file viewer.
